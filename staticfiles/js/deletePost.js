@@ -1,12 +1,3 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const successMessages = document.querySelectorAll('.messages .success');
-    if (successMessages.length > 0) {
-        successMessages.forEach(message => {
-            alert(message.textContent);
-        });
-    }
-});
-
 /* confirm delete */
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Document loaded, adding event listeners.');
