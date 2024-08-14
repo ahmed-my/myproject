@@ -20,12 +20,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseNotFound, HttpResponseForbidden, HttpResponseBadRequest # to implement chat 04-08-2024
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin # to exclude a user on the lists of users
-from .models import UserProfile, Portfolio, Message, Conversation, User, Folder # message added 02-08-2024
+from .models import UserProfile, Portfolio, Message, Conversation, User, Folder, ContactQuery # message added 02-08-2024
 from django.utils import timezone # using time and day for chat
 from .forms import UserCreationForm, UserProfileForm, UserRegistrationForm, AuthenticationForm, UserAuthenticationForm, MessageForm, ReplyMessageForm, PortfolioForm # MessageForm added 02-08-2024
 from itertools import groupby
 import uuid
-
 
 UserModel = get_user_model()
 
@@ -145,14 +144,18 @@ def portfolio_view(request):
 def folder_detail_view(request, profile_id, folder_name, folder_id):
     # Get the user profile based on profile_id
     user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
-    
+
     # Retrieve the user associated with the profile
     user = user_profile.user
-    
-    # Fetch the folder using the user's id, folder_id, and folder_name
+
+    # Ensure that the logged-in user is the owner of the profile
+    if request.user != user:
+        return HttpResponseForbidden("You are not authorized to view this folder.")
+
+    # Fetch the folder using the folder_id and folder_name
     folder = get_object_or_404(Folder, id=folder_id, user=user, name=folder_name)
-    
-    # Assuming you have a Portfolio model that links Folder to images:
+
+    # Retrieve images associated with the folder
     images = Portfolio.objects.filter(folder=folder)
 
     context = {
@@ -163,6 +166,8 @@ def folder_detail_view(request, profile_id, folder_name, folder_id):
         'title': folder.name,
     }
     return render(request, 'portfolio/folder_detail.html', context)
+
+
 
 
 """
@@ -504,22 +509,62 @@ def delete_chat(request):
 # implement image deletion from a folder
 @login_required
 def delete_image_view(request, profile_id, folder_id, image_id):
-    user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
-    image = get_object_or_404(Portfolio, id=image_id, folder_id=folder_id)
+    if request.method == 'POST':
+        # Get the user profile
+        user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
 
-    if request.user != user_profile.user:
-        return HttpResponseForbidden("You are not allowed to delete this image.")
-
-    if request.method == "POST":
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            image.delete()
-            return JsonResponse({'success': True})
-
+        # Ensure that the logged-in user is the owner of the profile
+        if request.user != user_profile.user:
+            return HttpResponseForbidden("You are not allowed to delete this image.")
+        
+        # Retrieve the image based on image_id and folder_id
+        image = get_object_or_404(Portfolio, id=image_id, folder_id=folder_id)
+        
+        # Delete the image
         image.delete()
-        return redirect(reverse('users:folder_detail', kwargs={'profile_id': profile_id, 'folder_name': image.folder.name, 'folder_id': folder_id}))
+        
+        return JsonResponse({'success': True})  # Respond with JSON
 
-    return HttpResponseNotFound("Page not found.")
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
+def folder_public_view(request, profile_id, folder_name, folder_id):
+    user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
+    folder = get_object_or_404(Folder, id=folder_id, name=folder_name, user__userprofile__profile_id=profile_id)
+    images = Portfolio.objects.filter(folder=folder)
+    context = {
+        'profile': user_profile,
+        'folder': folder,
+        'images': images,
+        'title': f"{folder.name} Portfolio",
+    }
+    return render(request, 'portfolio/folder_public.html', context)
 
+# Contact view
+def contact(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
 
+        # Send email
+        send_mail(
+            f"Contact Us: {subject}",
+            f"Name: {name}\nEmail: {email}\n\nMessage:\n{message}",
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.EMAIL_HOST_USER],  # Replace with your contact email from environ varaible
+            fail_silently=False,
+        )
 
+        # Save query to the database
+        ContactQuery.objects.create(
+            name=name,
+            email=email,
+            subject=subject,
+            message=message
+        )
+
+        messages.success(request, "Your message has been sent successfully!")
+        return render(request, 'contact.html')
+    
+    return render(request, 'contact.html')
