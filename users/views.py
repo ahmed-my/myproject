@@ -17,122 +17,17 @@ from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, HttpResponseBadRequest # to implement chat 04-08-2024
-from django.views.generic import ListView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin # to exclude a user on the lists of users
-from .models import UserProfile, EmailConfirmationToken, Portfolio, Message, Conversation, User, Folder, ContactQuery # message added 02-08-2024
-from django.utils import timezone # using time and day for chat
-from .forms import UserCreationForm, UserProfileForm, UserRegistrationForm, AuthenticationForm, UserAuthenticationForm, MessageForm, ReplyMessageForm, PortfolioForm, Folder # MessageForm added 02-08-2024
-from .utils import send_registration_confirmation_email, generate_confirmation_token
-from itertools import groupby
-import uuid
+#from django.contrib.auth.decorators import login_required
 
-UserModel = get_user_model()
 
-class CustomPasswordResetView(PasswordResetView):
-    email_template_name = 'registration/password_reset_email.html'
-    success_url = reverse_lazy('users:password_reset_done')
-    template_name = 'registration/password_reset.html'
-
-class CustomPasswordResetConfirmView(PasswordResetConfirmView):
-    template_name = 'registration/password_reset_confirm.html'
-    success_url = reverse_lazy('users:password_reset_complete')
-
-class CustomPasswordResetCompleteView(PasswordResetCompleteView):
-    template_name = 'registration/password_reset_complete.html'
-
-class CustomPasswordResetDoneView(PasswordResetDoneView):
-    template_name = 'registration/password_reset_done.html'
-
-def password_reset_request(request):
-    if request.method == "POST":
-        password_reset_form = PasswordResetForm(request.POST)
-        if password_reset_form.is_valid():
-            email = password_reset_form.cleaned_data['email']
-            associated_users = User.objects.filter(email=email)
-            if associated_users.exists():
-                for user in associated_users:
-                    subject = "Password Reset Requested"
-                    email_template_name = "registration/password_reset_email.html"
-                    context = {
-                        "email": user.email,
-                        "domain": request.META['HTTP_HOST'],
-                        "site_name": "WriteLux",
-                        "uid": urlsafe_base64_encode(force_bytes(user.pk)),
-                        "user": user,
-                        "token": default_token_generator.make_token(user),
-                        "protocol": "http",
-                    }
-                    email_content = render_to_string(email_template_name, context)
-                    
-                    # Generate the full password reset link
-                    reset_link = f"{context['protocol']}://{context['domain']}{reverse('users:password_reset_confirm', kwargs={'uidb64': context['uid'], 'token': context['token']})}"
-                    
-                    # Print the reset link to the console
-                    print("Password reset link:", reset_link)
-                    
-                    # Send the email
-                    send_mail(subject, email_content, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=False)
-                
-                messages.success(request, "Password reset email has been sent.")
-                return redirect("users:password_reset_done")
-            else:
-                # No user found with the provided email, show an error message
-                messages.error(request, "No user found with this email. Please enter a valid registered email")
-                return render(request, "registration/password_reset.html", {"password_reset_form": password_reset_form})
-        else:
-            messages.error(request, "Invalid email address.")
-    else:
-        password_reset_form = PasswordResetForm()
-    return render(request, "registration/password_reset.html", {"password_reset_form": password_reset_form})
-
-@csrf_exempt
-def resend_password_reset_email(request):
-    if request.method == "POST":
-        email = request.POST['email']
-        user = User.objects.filter(email=email).first()
-        if user:
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            reset_url = f"{request.scheme}://{request.get_host()}/reset/{uid}/{token}/"
-            send_mail(
-                "Password Reset",
-                f"Click the link to reset your password: {reset_url}",
-                "my.writelux@gmail.com",
-                [email],
-                fail_silently=False,
-            )
-            print("Password reset token:", token)  # Print the token to the console
-        return JsonResponse({"status": "success"})
-    return JsonResponse({"status": "failed"})
-
-def register(request):
+def register_user(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.is_active = False  # Deactivate user until email confirmation
-            user.save()
-
-            # Generate the email confirmation token
-            token = generate_confirmation_token(user)
-
-            # Send the registration confirmation email
-            send_registration_confirmation_email(user, token)
-
-            # Display success message
-            messages.success(request, 'Registration successful! Please check your email to confirm your account.')
-            
-            # Render the template with a success message and email field for the confirmation button
-            return render(request, 'users/register.html', {
-                'registration_success': True,
-                'user_email': user.email,
-                'form': UserRegistrationForm()  # Reinitialize form to clear fields
-            })
+            form.save()
+            return redirect('users:login_user')  # Adjust redirect as necessary
     else:
-        form = UserRegistrationForm()
-
+        form = CustomUserCreationForm()
     return render(request, 'users/register.html', {'form': form})
 
 def email_confirm(request, uidb64, token):
