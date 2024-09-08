@@ -44,7 +44,7 @@
         
                     <!-- Generate Folder URL Button -->
                     <button type="button" id="generate-url-button" class="btn btn-info mr-2" disabled>
-                        <i class="fas fa-link"></i> Generate Folder URL
+                        <i class="fas fa-link"></i> Share Folder Link
                     </button>
                     
                     <!-- Back to Dashboard Button -->
@@ -183,7 +183,8 @@
                 uploadButton.disabled = false;
                 renameButton.disabled = folderCount === 1 ? false : true;
                 deleteButton.disabled = false;
-                generateUrlButton.disabled = false;
+                // generateUrlButton.disabled = false;
+                generateUrlButton.disabled = folderCount === 1 ? false : true;
             } else {
                 uploadButton.disabled = true;
                 renameButton.disabled = true;
