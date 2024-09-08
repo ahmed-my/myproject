@@ -264,10 +264,21 @@ def upload_image(request):
             messages.error(request, "Failed to upload image. Please correct the errors below.")
     else:
         form = PortfolioForm()
+<<<<<<< HEAD
+=======
+        # Get the selected folders passed from the previous view (if any)
+        folder_ids = request.GET.get('folder_ids', '')
+        selected_folders = []
+
+        if folder_ids:
+            folder_ids_list = folder_ids.split(',')
+            selected_folders = Folder.objects.filter(id__in=folder_ids_list, user=request.user)
+>>>>>>> 6491188d80f7088f72eae640298bf379f1212010
 
     folders = Folder.objects.filter(user=request.user)
     return render(request, 'users/upload_image.html', {
         'form': form,
+<<<<<<< HEAD
         'selected_folders': folders,
         'folder_count': folders.count(),
     })
@@ -308,6 +319,11 @@ def upload_image(request):
         'folder_count': folder_count  # Pass folder count to the template
     })
 """
+=======
+        'selected_folders': selected_folders,
+        'folder_count': len(selected_folders),
+    })
+>>>>>>> 6491188d80f7088f72eae640298bf379f1212010
 
 @login_required
 def user_profile(request):

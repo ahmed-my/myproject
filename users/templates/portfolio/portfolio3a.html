@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="{% static 'css-style/profile-user.css' %}">
     <link rel="stylesheet" href="{% static 'css-style/profile-portfolio.css' %}">
     <link rel="stylesheet" href="{% static 'css-style/portfolio.css' %}">
-    <link rel="stylesheet" href="{% static 'css-style/folder-display.css' %}">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
@@ -19,18 +18,13 @@
         <form id="folder-actions-form" method="post">
             {% csrf_token %}
             <div class="folder-actions">
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
                 <!-- Folder Actions with Icons -->
                 <div class="folder-buttons mb-4">
                     <!-- Add Folder Button -->
                     <button type="button" id="add-folder-button" class="btn btn-success mr-2" data-toggle="modal" data-target="#addFolderModal">
                         <i class="fas fa-folder-plus"></i> Add Folder
                     </button>
-<<<<<<< HEAD
 
                     <!-- Upload Image Button -->
                     <button type="button" id="upload-image-button" class="btn btn-secondary">
@@ -39,35 +33,16 @@
 
                     <!-- Rename Folder Button -->
                     <button type="button" id="rename-folder-button" class="btn btn-primary mr-2">
-=======
-        
-                    <!-- Upload Image Button -->
-                    <button type="button" id="upload-image-button" class="btn btn-secondary mr-2" disabled>
-                        <i class="fas fa-upload"></i> Upload Image to Folder
-                    </button>
-        
-                    <!-- Rename Folder Button -->
-                    <button type="button" id="rename-folder-button" class="btn btn-primary mr-2" disabled>
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
                         <i class="fas fa-edit"></i> Rename Selected Folder
                     </button>
                     
                     <!-- Delete Folder Button -->
-<<<<<<< HEAD
                     <button type="button" id="delete-folder-button" class="btn btn-danger mr-2">
                         <i class="fas fa-trash"></i> Delete Selected Folders
                     </button>
 
                     <!-- Generate Folder URL Button -->
                     <button type="button" id="generate-url-button" class="btn btn-info">
-=======
-                    <button type="button" id="delete-folder-button" class="btn btn-danger mr-2" disabled>
-                        <i class="fas fa-trash"></i> Delete Selected Folders
-                    </button>
-        
-                    <!-- Generate Folder URL Button -->
-                    <button type="button" id="generate-url-button" class="btn btn-info mr-2" disabled>
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
                         <i class="fas fa-link"></i> Generate Folder URL
                     </button>
                     
@@ -76,7 +51,6 @@
                         <i class="fas fa-arrow-left"></i> Back to Dashboard
                     </a>
                 </div>
-<<<<<<< HEAD
 
                 <!-- Add Search Input Above the Folder List -->
                 <div class="folder-search mb-4">
@@ -102,33 +76,6 @@
                     </div>
                 </div>
 
-=======
-        
-                <!-- Add Search Input Above the Folder List -->
-                <div class="folder-search mb-4">
-                    <input type="text" id="folder-search-input" class="form-control" placeholder="Search Folder....">
-                </div>
-        
-                <!-- Folder Display Section -->
-                <h3>Selected Folders: <span id="folder-count">0</span></h3>
-                <div class="row">
-                    {% for folder in folders %}
-                    <div class="col-md-4">
-                        <div class="card folder-card mb-4">
-                            <div class="card-body text-center">
-                                <input type="checkbox" class="folder-checkbox" id="folder-{{ folder.id }}" name="folders" value="{{ folder.id }}" onchange="updateFolderSelection()">
-                                <label for="folder-{{ folder.id }}" class="folder-label">
-                                    <a href="{% url 'users:folder_detail' user.userprofile.profile_id folder.name folder.id %}" class="folder-link">
-                                        <i class="fas fa-folder fa-2x text-primary"></i>
-                                        <h5 class="mt-2">{{ folder.name }}</h5>
-                                    </a>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
             </div>
         </form>
 
@@ -186,12 +133,7 @@
                 </div>
             </div>
         </div>
-<<<<<<< HEAD
-
-        
-=======
          
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
         <!-- Generate URL Modal -->
         <div class="modal fade" id="generateUrlModal" tabindex="-1" role="dialog" aria-labelledby="generateUrlModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
@@ -220,48 +162,11 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<<<<<<< HEAD
-=======
-
-    <script>
-        function updateFolderSelection() {
-            const checkboxes = document.querySelectorAll('.folder-checkbox');
-            const selectedFolders = [...checkboxes].filter(checkbox => checkbox.checked);
-            const folderCount = selectedFolders.length;
-    
-            // Update the folder count display
-            document.getElementById('folder-count').innerText = folderCount;
-    
-            // Enable or disable buttons based on selection
-            const uploadButton = document.getElementById('upload-image-button');
-            const renameButton = document.getElementById('rename-folder-button');
-            const deleteButton = document.getElementById('delete-folder-button');
-            const generateUrlButton = document.getElementById('generate-url-button');
-    
-            if (folderCount > 0) {
-                uploadButton.disabled = false;
-                renameButton.disabled = folderCount === 1 ? false : true;
-                deleteButton.disabled = false;
-                generateUrlButton.disabled = false;
-            } else {
-                uploadButton.disabled = true;
-                renameButton.disabled = true;
-                deleteButton.disabled = true;
-                generateUrlButton.disabled = true;
-            }
-        }
-    </script>
-
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
     <!-- Include the Search Filter Script -->
     <script>
         document.getElementById('folder-search-input').addEventListener('keyup', function() {
             let filter = this.value.toLowerCase();
-<<<<<<< HEAD
             let folderItems = document.querySelectorAll('.form-check'); // Updated selector
-=======
-            let folderItems = document.querySelectorAll('.folder-card'); // Updated selector
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
 
             folderItems.forEach(function(item) {
                 let text = item.textContent.toLowerCase();
@@ -346,23 +251,12 @@
 
             // Update the URL generation in the portfolio.html
             $('#generate-url-button').click(function() {
-<<<<<<< HEAD
                 var selectedFolders = $('.folder-checkbox:checked'); // This now captures all selected folders
-=======
-                var selectedFolders = $('.folder-checkbox:checked'); // Capture all selected folders
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
                 
                 if (selectedFolders.length === 1) {
                     var selectedFolder = selectedFolders.first(); // Get the first (and only) selected folder
                     var folderId = selectedFolder.val();
-<<<<<<< HEAD
                     var folderName = selectedFolder.closest('.form-check').find('label').text().trim();
-=======
-                    
-                    // Assuming that the folder name is inside the .folder-card
-                    var folderName = selectedFolder.closest('.folder-card').find('h5').text().trim();
-                    
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
                     var profileId = '{{ user.userprofile.profile_id }}';
                     
                     // Ensure the base URL is correctly built
@@ -374,16 +268,9 @@
                 } else if (selectedFolders.length === 0) {
                     alert('Please select a folder to generate the URL.');
                 } else {
-<<<<<<< HEAD
                     alert('Please select only one folder to generate the URL.'); // Specifically handles the case for more than one folder selected
                 }
             });
-=======
-                    alert('Please select only one folder to generate the URL.');
-                }
-            });
-            
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
                        
         });
     </script>
