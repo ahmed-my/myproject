@@ -10,8 +10,7 @@ def generate_confirmation_token(user):
     return default_token_generator.make_token(user)
 
 def send_registration_confirmation_email(user, token):
-    # Encode user ID to uidb64 format
-    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))  # Encode user ID to uidb64 format
     
     # Generate dynamic confirmation URL
     confirmation_url = settings.SITE_URL + reverse('users:email_confirm', kwargs={'uidb64': uidb64, 'token': token})
