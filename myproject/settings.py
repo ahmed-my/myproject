@@ -28,7 +28,7 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 SECRET_KEY = env('SECRET_KEY', default="django-insecure-c%@sd(t6n*^q&uew-dxu$cjq9nqt6lne11(f$+v6+@k=5#_2#0")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DEBUG', default=True)
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
