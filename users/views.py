@@ -1,8 +1,8 @@
 # users/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm
-from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -21,9 +21,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, HttpResponseBadRequest # to implement chat 04-08-2024
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin # to exclude a user on the lists of users
-from .models import UserProfile, Portfolio, Message, Conversation, User, Folder, ContactQuery # message added 02-08-2024
+from .models import UserProfile, EmailConfirmationToken, Portfolio, Message, Conversation, User, Folder, ContactQuery # message added 02-08-2024
 from django.utils import timezone # using time and day for chat
 from .forms import UserCreationForm, UserProfileForm, UserRegistrationForm, AuthenticationForm, UserAuthenticationForm, MessageForm, ReplyMessageForm, PortfolioForm, Folder # MessageForm added 02-08-2024
+from .utils import send_registration_confirmation_email, generate_confirmation_token
 from itertools import groupby
 import uuid
 
@@ -110,11 +111,60 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('users:login_user')
+            user = form.save(commit=False)
+            user.is_active = False  # Deactivate user until email confirmation
+            user.save()
+
+            # Generate the email confirmation token
+            token = generate_confirmation_token(user)
+
+            # Send the registration confirmation email
+            send_registration_confirmation_email(user, token)
+
+            # Display success message
+            messages.success(request, 'Registration successful! Please check your email to confirm your account.')
+            
+            # Render the template with a success message and email field for the confirmation button
+            return render(request, 'users/register.html', {
+                'registration_success': True,
+                'user_email': user.email,
+                'form': UserRegistrationForm()  # Reinitialize form to clear fields
+            })
     else:
         form = UserRegistrationForm()
+
     return render(request, 'users/register.html', {'form': form})
+
+def email_confirm(request, uidb64, token):
+    try:
+        # Decode the user ID from the base64 string
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+
+        # Get the user by their ID
+        user = get_object_or_404(User, pk=user_id)
+
+        # Check if the token matches
+        if default_token_generator.check_token(user, token):
+            # Activate the user
+            user.is_active = True
+            user.save()
+
+            # Optionally, delete the token
+            EmailConfirmationToken.objects.filter(user=user).delete()
+
+            # Display a success message
+            messages.success(request, 'Your email has been confirmed! You can now log in.')
+
+            # Redirect to the login page
+            return redirect('users:login_user')
+
+        else:
+            messages.error(request, 'Invalid or expired confirmation token.')
+            return redirect('users:register')
+
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        messages.error(request, 'Invalid confirmation link.')
+        return redirect('users:register')
 
 def login_user(request):
     if request.method == 'POST':
@@ -264,8 +314,6 @@ def upload_image(request):
             messages.error(request, "Failed to upload image. Please correct the errors below.")
     else:
         form = PortfolioForm()
-<<<<<<< HEAD
-=======
         # Get the selected folders passed from the previous view (if any)
         folder_ids = request.GET.get('folder_ids', '')
         selected_folders = []
@@ -273,57 +321,13 @@ def upload_image(request):
         if folder_ids:
             folder_ids_list = folder_ids.split(',')
             selected_folders = Folder.objects.filter(id__in=folder_ids_list, user=request.user)
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
 
     folders = Folder.objects.filter(user=request.user)
     return render(request, 'users/upload_image.html', {
         'form': form,
-<<<<<<< HEAD
-        'selected_folders': folders,
-        'folder_count': folders.count(),
-    })
-    
-"""
-@login_required
-def upload_image(request):
-    folder_ids = request.GET.get('folder_ids')
-    selected_folders = None
-
-    if folder_ids:
-        folder_ids = folder_ids.split(',')
-        selected_folders = Folder.objects.filter(id__in=folder_ids, user=request.user)
-
-    folder_count = len(selected_folders) if selected_folders else 0
-
-    if request.method == 'POST':
-        form = PortfolioForm(request.POST, request.FILES, user=request.user)
-        if form.is_valid():
-            portfolio_image = form.save(commit=False)  # Create but don't save to DB yet
-            portfolio_image.user = request.user
-            portfolio_image.save()  # Save the Portfolio instance first to get a valid ID
-    
-            if selected_folders:
-                portfolio_image.folder.set(selected_folders)  # Set the ManyToMany relationship
-                portfolio_image.save()  # Save the relationship                                                                                                                                             
-
-            # Debugging: Log the folders associated with the portfolio_image
-            print(f"Folders associated with {portfolio_image}: {portfolio_image.folder.all()}")
-
-            return redirect('users:portfolio')
-    else:
-        form = PortfolioForm(user=request.user)
-
-    return render(request, 'portfolio/upload_image.html', {
-        'form': form,
-        'selected_folders': selected_folders,
-        'folder_count': folder_count  # Pass folder count to the template
-    })
-"""
-=======
         'selected_folders': selected_folders,
         'folder_count': len(selected_folders),
     })
->>>>>>> 6491188d80f7088f72eae640298bf379f1212010
 
 @login_required
 def user_profile(request):
