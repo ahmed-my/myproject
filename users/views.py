@@ -213,7 +213,6 @@ def rename_folder(request, folder_id):
             else:
                 folder.name = new_name
                 folder.save()
-                messages.success(request, "Folder renamed successfully")
                 return redirect('users:portfolio')
         else:
             messages.info(request, "folder name exist, please enter a different name.")
