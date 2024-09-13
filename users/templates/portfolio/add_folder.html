@@ -42,15 +42,6 @@
     <div class="container">
         <h2>Add a New Folder</h2>
 
-        <!-- Display any messages (e.g., success or error messages) -->
-        {% if messages %}
-            <div class="alert alert-info">
-                {% for message in messages %}
-                    {{ message }}
-                {% endfor %}
-            </div>
-        {% endif %}
-
         <!-- Form for adding a new folder -->
         <form method="post">
             {% csrf_token %}
