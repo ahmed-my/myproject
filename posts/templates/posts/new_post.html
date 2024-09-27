@@ -12,8 +12,8 @@
     <script>
         tinymce.init({
           selector: 'textarea',
-          plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak media',
-          toolbar: 'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media',
+          plugins: 'advlist autolink lists link image charmap print preview hr anchor pagebreak media code'
+          toolbar: 'insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media | code'
           images_upload_url: '{% url "users:upload_image" %}',  // Correct URL for image upload
           automatic_uploads: true,
           file_picker_types: 'image',

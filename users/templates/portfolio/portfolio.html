@@ -59,7 +59,7 @@
                 </div>
         
                 <!-- Folder Display Section -->
-                <h3>Selected Folders: <span id="folder-count">0</span></h3>
+                <h3 id="folder-header">Selected Folders: 0</h3>  <!-- This h3 element will be dynamically updated -->
                 <div class="row">
                     {% for folder in folders %}
                     <div class="col-md-4">
@@ -170,21 +170,26 @@
             const checkboxes = document.querySelectorAll('.folder-checkbox');
             const selectedFolders = [...checkboxes].filter(checkbox => checkbox.checked);
             const folderCount = selectedFolders.length;
-    
-            // Update the folder count display
-            document.getElementById('folder-count').innerText = folderCount;
-    
+            
+            // Update the folder count display in the h3
+            const folderHeader = document.getElementById('folder-header');
+            
+            if (folderCount === 1) {
+                folderHeader.innerText = `Selected Folder: ${folderCount}`;
+            } else {
+                folderHeader.innerText = `Selected Folders: ${folderCount}`;
+            }
+            
             // Enable or disable buttons based on selection
             const uploadButton = document.getElementById('upload-image-button');
             const renameButton = document.getElementById('rename-folder-button');
             const deleteButton = document.getElementById('delete-folder-button');
             const generateUrlButton = document.getElementById('generate-url-button');
-    
+            
             if (folderCount > 0) {
                 uploadButton.disabled = false;
                 renameButton.disabled = folderCount === 1 ? false : true;
                 deleteButton.disabled = false;
-                // generateUrlButton.disabled = false;
                 generateUrlButton.disabled = folderCount === 1 ? false : true;
             } else {
                 uploadButton.disabled = true;
@@ -193,6 +198,7 @@
                 generateUrlButton.disabled = true;
             }
         }
+        
     </script>
 
     <!-- Include the Search Filter Script -->

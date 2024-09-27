@@ -243,7 +243,7 @@ def add_folder(request):
 
         # If the folder does not exist, create a new folder
         Folder.objects.create(user=user, name=folder_name)
-        messages.success(request, 'Folder added successfully')
+
         return redirect('users:portfolio')  # Redirect to the portfolio page
 
     return render(request, 'portfolio/add_folder.html')
