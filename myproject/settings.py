@@ -30,7 +30,17 @@ SECRET_KEY = env('SECRET_KEY', default="django-insecure-c%@sd(t6n*^q&uew-dxu$cjq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
-ALLOWED_HOSTS = ['*']
+# Add your actual domain or localhost for development
+SITE_URL = 'http://127.0.0.1:8000'  # Replace with your actual domain in production
+
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'writelux.pythonanywhere.com',
+    'www.writelux.pythonanywhere.com',
+]
+
+# ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -46,6 +56,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'django.contrib.sitemaps',
 
     # ... include the providers you want to enable:
     'allauth.socialaccount.providers.facebook',
@@ -86,7 +97,14 @@ SITE_ID = 1
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Allauth specific settings
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = [
+    'email*', 
+    'username*', 
+    'password1*', 
+    'password2*'
+]
+
+# ACCOUNT_EMAIL_REQUIRED = True This is Deprecated
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 
 # Social account providers
@@ -210,7 +228,7 @@ STATICFILES_DIRS = [
 ]
 
 # Ahmed added below
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Add the following line to define STATIC_ROOT
@@ -223,3 +241,17 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# Internationalization
+USE_I18N = True
+LANGUAGES = [
+    ('en', 'English'),
+    ('fr', 'French'),
+    ('ha', 'Hausa'),
+    ('yo', 'yoruba'),
+    ('ig', 'Igbo'),
+    ('ar', 'Arabic'),
+    # Add more as needed
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']

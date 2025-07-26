@@ -1,8 +1,8 @@
 # users/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm
-from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -11,21 +11,24 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView, PasswordResetDoneView
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseNotFound, HttpResponseForbidden, HttpResponseBadRequest # to implement chat 04-08-2024
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, HttpResponseBadRequest # to implement chat 04-08-2024
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin # to exclude a user on the lists of users
-from .models import UserProfile, Portfolio, Message, Conversation, User, Folder # message added 02-08-2024
+from .models import UserProfile, EmailConfirmationToken, Portfolio, Message, Conversation, User, Folder, ContactQuery, TypingStatus, Conversation # message added 02-08-2024
 from django.utils import timezone # using time and day for chat
-from .forms import UserCreationForm, UserProfileForm, UserRegistrationForm, AuthenticationForm, UserAuthenticationForm, MessageForm, ReplyMessageForm, PortfolioForm # MessageForm added 02-08-2024
+from .forms import UserCreationForm, UserProfileForm, UserRegistrationForm, AuthenticationForm, UserAuthenticationForm, MessageForm, ReplyMessageForm, PortfolioForm, Folder # MessageForm added 02-08-2024
+from .utils import send_registration_confirmation_email, generate_confirmation_token
 from itertools import groupby
 import uuid
-
+import json
 
 UserModel = get_user_model()
 
@@ -49,7 +52,7 @@ def password_reset_request(request):
         password_reset_form = PasswordResetForm(request.POST)
         if password_reset_form.is_valid():
             email = password_reset_form.cleaned_data['email']
-            associated_users = UserModel.objects.filter(email=email)
+            associated_users = User.objects.filter(email=email)
             if associated_users.exists():
                 for user in associated_users:
                     subject = "Password Reset Requested"
@@ -57,7 +60,7 @@ def password_reset_request(request):
                     context = {
                         "email": user.email,
                         "domain": request.META['HTTP_HOST'],
-                        "site_name": "Website",
+                        "site_name": "WriteLux",
                         "uid": urlsafe_base64_encode(force_bytes(user.pk)),
                         "user": user,
                         "token": default_token_generator.make_token(user),
@@ -77,13 +80,14 @@ def password_reset_request(request):
                 messages.success(request, "Password reset email has been sent.")
                 return redirect("users:password_reset_done")
             else:
-                messages.error(request, "No user is associated with this email.")
+                # No user found with the provided email, show an error message
+                messages.error(request, "No user found with this email. Please enter a valid registered email")
+                return render(request, "registration/password_reset.html", {"password_reset_form": password_reset_form})
         else:
             messages.error(request, "Invalid email address.")
     else:
         password_reset_form = PasswordResetForm()
     return render(request, "registration/password_reset.html", {"password_reset_form": password_reset_form})
-
 
 @csrf_exempt
 def resend_password_reset_email(request):
@@ -97,7 +101,7 @@ def resend_password_reset_email(request):
             send_mail(
                 "Password Reset",
                 f"Click the link to reset your password: {reset_url}",
-                "from@example.com",
+                "my.writelux@gmail.com",
                 [email],
                 fail_silently=False,
             )
@@ -109,11 +113,60 @@ def register(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect('users:login_user')
+            user = form.save(commit=False)
+            user.is_active = False  # Deactivate user until email confirmation
+            user.save()
+
+            # Generate the email confirmation token
+            token = generate_confirmation_token(user)
+
+            # Send the registration confirmation email
+            send_registration_confirmation_email(user, token)
+
+            # Display success message
+            messages.success(request, 'Registration successful! Please check your email to confirm your account.')
+            
+            # Render the template with a success message and email field for the confirmation button
+            return render(request, 'users/register.html', {
+                'registration_success': True,
+                'user_email': user.email,
+                'form': UserRegistrationForm()  # Reinitialize form to clear fields
+            })
     else:
         form = UserRegistrationForm()
+
     return render(request, 'users/register.html', {'form': form})
+
+def email_confirm(request, uidb64, token):
+    try:
+        # Decode the user ID from the base64 string
+        user_id = force_str(urlsafe_base64_decode(uidb64))
+
+        # Get the user by their ID
+        user = get_object_or_404(User, pk=user_id)
+
+        # Check if the token matches
+        if default_token_generator.check_token(user, token):
+            # Activate the user
+            user.is_active = True
+            user.save()
+
+            # Optionally, delete the token
+            EmailConfirmationToken.objects.filter(user=user).delete()
+
+            # Display a success message
+            messages.success(request, 'Your email has been confirmed! You can now log in.')
+
+            # Redirect to the login page
+            return redirect('users:login_user')
+
+        else:
+            messages.error(request, 'Invalid or expired confirmation token.')
+            return redirect('users:register')
+
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        messages.error(request, 'Invalid confirmation link.')
+        return redirect('users:register')
 
 def login_user(request):
     if request.method == 'POST':
@@ -145,72 +198,79 @@ def portfolio_view(request):
 def folder_detail_view(request, profile_id, folder_name, folder_id):
     # Get the user profile based on profile_id
     user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
-    
+
     # Retrieve the user associated with the profile
     user = user_profile.user
-    
-    # Fetch the folder using the user's id, folder_id, and folder_name
+
+    # Ensure that the logged-in user is the owner of the profile
+    if request.user != user:
+        return HttpResponseForbidden("You are not authorized to view this folder.")
+
+    # Fetch the folder using the folder_id and folder_name
     folder = get_object_or_404(Folder, id=folder_id, user=user, name=folder_name)
-    
-    # Assuming you have a Portfolio model that links Folder to images:
+
+    # Retrieve images associated with the folder
     images = Portfolio.objects.filter(folder=folder)
 
+    print(images)  # Debugging line
+
+    # Debugging: Print out the details of images retrieved
+    print(f"Folder: {folder.name}")
+    print("Images retrieved:")
+    for image in images:
+        print(f"ID: {image.id}, URL: {image.image.url}, Description: {image.description}")
+
+    # Debugging: Print out the images retrieved
+    print(f"Images in folder '{folder.name}': {[image.image.url for image in images]}")
+
     context = {
-        'profile': user_profile,
         'profile_id': profile_id,  # Explicitly pass profile_id
         'folder': folder,
         'images': images,
         'title': folder.name,
+        'profile': request.user.userprofile  # Ensure this is available in your context
     }
     return render(request, 'portfolio/folder_detail.html', context)
 
-
-"""
 @login_required
-def folder_detail_view(request, profile_id, folder_id):
-    # Get the user profile based on profile_id
-    user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
-    
-    # Retrieve the user associated with the profile
-    user = user_profile.user
-    
-    # Fetch the folder using the user's id and folder_id
-    folder = get_object_or_404(Folder, id=folder_id, user=user)
-    
-    # Assuming you have a Portfolio model that links Folder to images:
-    images = Portfolio.objects.filter(folder=folder)  # Adjust as per your model structure
-
-    context = {
-        'folder': folder,
-        'images': images,
-        'title': folder.name,
-    }
-    return render(request, 'portfolio/folder_detail.html', context)
-"""
-
-@login_required # tested ok under review
-def add_folder(request): # 09-08-2024
+def add_folder(request):
     if request.method == 'POST':
         folder_name = request.POST.get('folder_name')
-        if folder_name:  # Make sure the folder name is not empty
-            Folder.objects.create(user=request.user, name=folder_name)
-            return redirect('users:portfolio')  # Redirect to the portfolio page after adding
+        user = request.user
+
+        # Check if a folder with the same name already exists for this user
+        if Folder.objects.filter(user=user, name=folder_name).exists():
+            messages.error(request, 'Folder name already exists')
+            return redirect('users:add_folder')  # Redirect back to the Add Folder page
+
+        # If the folder does not exist, create a new folder
+        Folder.objects.create(user=user, name=folder_name)
+
+        return redirect('users:portfolio')  # Redirect to the portfolio page
+
     return render(request, 'portfolio/add_folder.html')
 
-@login_required # 09-08-2024 renaming of a folder
-def rename_folder(request):
-    if request.method == 'POST':
-        folder_id = request.POST.get('folder_id')
-        new_name = request.POST.get('new_name')
-        
-        if not folder_id or not new_name:
-            return HttpResponseBadRequest("Invalid request parameters.")
-        
-        folder = Folder.objects.filter(id=folder_id, user=request.user).first()
-        if folder:
-            folder.name = new_name
-            folder.save()
-    return redirect('users:portfolio')
+@login_required
+def rename_folder(request, folder_id):
+    folder = get_object_or_404(Folder, id=folder_id, user=request.user)  # Ensure the folder belongs to the logged-in user
+
+    if request.method == "POST":
+        new_name = request.POST.get('folder_name', '').strip()  # Provide a default empty string and strip whitespace
+
+        if new_name:  # Proceed only if new_name is not an empty string
+            if new_name == folder.name:
+                messages.info(request, "The new name is the same as the current name. Please enter a different name.")
+            elif Folder.objects.filter(name=new_name, user=request.user).exists():
+                messages.info(request, "A folder with that name already exists. Please choose a different name.")
+            else:
+                folder.name = new_name
+                folder.save()
+                return redirect('users:portfolio')
+        else:
+            messages.info(request, "folder name exist, please enter a different name.")
+    
+    return render(request, 'portfolio/rename_folder.html', {'current_folder_name': folder.name, 'folder': folder})
+
 
 @login_required # 09-08-2024 delete a folder
 def delete_folders(request):
@@ -236,22 +296,39 @@ def profile_portfolio(request, slug):
 @login_required
 def upload_image(request):
     if request.method == 'POST':
-        form = PortfolioForm(request.POST, request.FILES, user=request.user)
+        form = PortfolioForm(request.POST, request.FILES)
         if form.is_valid():
-            portfolio_image = form.save(commit=False)
-            portfolio_image.user = request.user
-            
-            # Assign the selected folder, if any
-            selected_folder = form.cleaned_data.get('folder')  # Get the folder from cleaned data
-            if selected_folder:
-                portfolio_image.folder = selected_folder  # Assign the selected folder
-            
-            portfolio_image.save()
-            return redirect('users:portfolio')  # Redirect to portfolio or dashboard
+            portfolio = form.save(commit=False)
+            portfolio.user = request.user
+            portfolio.save()
+
+            # Handling the folder_ids from the hidden input field
+            folder_ids = request.POST.get('folder_ids', '')
+            if folder_ids:
+                folder_ids_list = folder_ids.split(',')
+                folders = Folder.objects.filter(id__in=folder_ids_list, user=request.user)
+                portfolio.folder.set(folders)
+
+            messages.success(request, "Image uploaded successfully!")
+            return redirect('users:portfolio')
+        else:
+            messages.error(request, "Failed to upload image. Please correct the errors below.")
     else:
-        form = PortfolioForm(user=request.user)
-    
-    return render(request, 'portfolio/upload_image.html', {'form': form})
+        form = PortfolioForm()
+        # Get the selected folders passed from the previous view (if any)
+        folder_ids = request.GET.get('folder_ids', '')
+        selected_folders = []
+
+        if folder_ids:
+            folder_ids_list = folder_ids.split(',')
+            selected_folders = Folder.objects.filter(id__in=folder_ids_list, user=request.user)
+
+    folders = Folder.objects.filter(user=request.user)
+    return render(request, 'users/upload_image.html', {
+        'form': form,
+        'selected_folders': selected_folders,
+        'folder_count': len(selected_folders),
+    })
 
 @login_required
 def user_profile(request):
@@ -298,23 +375,30 @@ def profile_detail(request, profile_id):
 
 @login_required
 def edit_profile(request):
-    user = request.user
-    profile = get_object_or_404(UserProfile, user=user)
+    user_profile = request.user.userprofile  # Fetch the user's profile
 
     if request.method == 'POST':
-        profile_form = UserProfileForm(request.POST, request.FILES, instance=profile)
-        if profile_form.is_valid():
-            profile_form.save()
-            messages.success(request, 'Profile updated successfully.')
-            return redirect('dashboard')
-    else:
-        profile_form = UserProfileForm(instance=profile)
+        profile_form = UserProfileForm(request.POST, request.FILES, instance=user_profile, user=request.user)
 
-    return render(request, 'users/edit_profile.html', {
+        # Check if the form has changed
+        if profile_form.has_changed():
+            if profile_form.is_valid():
+                profile_form.save()
+                # Since the success message is handled in JavaScript, no need to pass messages here
+                return redirect('users:user_profile')  # Redirect to the user profile page
+        else:
+            # If the form hasn't changed, you can also optionally log or handle this
+            # The "No changes made" alert is shown by the JavaScript on the front-end
+            return redirect('users:user_profile')
+
+    else:
+        # Initial form rendering with the user's current information
+        profile_form = UserProfileForm(instance=user_profile, user=request.user)
+
+    context = {
         'profile_form': profile_form,
-        'profile': profile,
-        'user': user,
-    })
+    }
+    return render(request, 'users/edit_profile.html', context)
 
 @login_required
 def chat_message(request):
@@ -345,6 +429,11 @@ def chat_message(request):
             conversation.participants.add(user)
 
     messages = conversation.messages.all().order_by('timestamp')
+
+    # Step 5: Mark messages sent to the current user as read
+    unread_messages = messages.filter(recipient=request.user, is_read=False)
+    unread_messages.update(is_read=True)
+       
 
     # Group messages by day
     message_days = [
@@ -427,7 +516,7 @@ def send_message_ajax(request):
             'id': message.id,
             'sender': message.sender.username,
             'body': message.body,
-            'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'timestamp': message.timestamp.strftime('%H:%M'),
         }})
 
 @login_required
@@ -504,22 +593,110 @@ def delete_chat(request):
 # implement image deletion from a folder
 @login_required
 def delete_image_view(request, profile_id, folder_id, image_id):
-    user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
-    image = get_object_or_404(Portfolio, id=image_id, folder_id=folder_id)
+    if request.method == 'POST':
+        # Get the user profile
+        user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
 
-    if request.user != user_profile.user:
-        return HttpResponseForbidden("You are not allowed to delete this image.")
+        # Ensure that the logged-in user is the owner of the profile
+        if request.user != user_profile.user:
+            return HttpResponseForbidden("You are not allowed to delete this image.")
+        
+        # Retrieve the image based on image_id and folder_id
+        # views.py
 
-    if request.method == "POST":
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            image.delete()
-            return JsonResponse({'success': True})
-
+        image = get_object_or_404(Portfolio, id=image_id, folder__id=folder_id)
+        
+        # Delete the image
         image.delete()
-        return redirect(reverse('users:folder_detail', kwargs={'profile_id': profile_id, 'folder_name': image.folder.name, 'folder_id': folder_id}))
+        
+        return JsonResponse({'success': True})  # Respond with JSON
 
-    return HttpResponseNotFound("Page not found.")
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'})
+
+def folder_public_view(request, profile_id, folder_name, folder_id):
+    user_profile = get_object_or_404(UserProfile, profile_id=profile_id)
+    folder = get_object_or_404(Folder, id=folder_id, name=folder_name, user__userprofile__profile_id=profile_id)
+    images = Portfolio.objects.filter(folder=folder)
+    context = {
+        'profile': user_profile,
+        'folder': folder,
+        'images': images,
+        'title': folder.name,
+    }
+    return render(request, 'portfolio/folder_public.html', context)
+
+# Contact view
+def contact(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        # Send email
+        send_mail(
+            f"Contact Us: {subject}",
+            f"Name: {name}\nEmail: {email}\n\nMessage:\n{message}",
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.EMAIL_HOST_USER],  # Replace with your contact email from environ varaible
+            fail_silently=False,
+        )
+
+        # Save query to the database
+        ContactQuery.objects.create(
+            name=name,
+            email=email,
+            subject=subject,
+            message=message
+        )
+
+        messages.success(request, "Your message has been sent successfully!")
+        return render(request, 'contact.html')
+    
+    return render(request, 'contact.html')
+
+@csrf_exempt
+def update_typing_status(request):
+    if request.method == 'POST' and request.user.is_authenticated:
+        is_typing = request.POST.get('is_typing') == 'true'
+        conv_id = request.POST.get('conversation_id')
+        conversation = Conversation.objects.get(id=conv_id)
+
+        status, created = TypingStatus.objects.get_or_create(user=request.user, conversation=conversation)
+        status.is_typing = is_typing
+        status.save()
+
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'unauthorized'}, status=401)
+
+def get_typing_status(request):
+    if request.user.is_authenticated:
+        conv_id = request.GET.get('conversation_id')
+        conversation = Conversation.objects.get(id=conv_id)
+        other_typing = TypingStatus.objects.filter(conversation=conversation).exclude(user=request.user).first()
+        return JsonResponse({'is_typing': other_typing.is_typing if other_typing else False})
+    return JsonResponse({'is_typing': False})
 
 
+@require_POST
+@login_required
+def clear_chat(request, conversation_id):
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    if request.user not in conversation.participants.all():
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    conversation.messages.filter(sender=request.user).delete()
+    return JsonResponse({'status': 'ok'})
 
-
+"""
+@login_required
+@require_POST
+def clear_chat(request):
+    conversation_id = request.POST.get('conversation_id')
+    try:
+        conversation = Conversation.objects.get(id=conversation_id, participants=request.user)
+        conversation.messages.filter(sender=request.user).delete()
+        return JsonResponse({'status': 'ok'})
+    except Conversation.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Conversation not found'}, status=404)
+"""

@@ -1,9 +1,18 @@
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
+from .sitemaps import StaticViewSitemap, CourseSitemap, LessonSitemap
 from django.urls import path, include
 from . import views
 from django.conf.urls.static import static
 from django.conf import settings
 from .views import PostCreateView, PostDetailView, PostUpdateView, PostDeleteView, generate_portfolio_url
+
+
+sitemaps = {
+    'static': StaticViewSitemap,
+    'courses': CourseSitemap,
+    'lessons': LessonSitemap,
+}
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -12,6 +21,7 @@ urlpatterns = [
     path("dashboard/", views.dashboard, name='dashboard'),
     path("image/", views.image_list, name='image'),
     path('generate-portfolio-url/', generate_portfolio_url, name='generate_portfolio_url'),
+    path('faq/', views.faq, name='faq'),
     
     path("posts/", include('posts.urls')),  # Include the URLs from the posts app
     path('fitness/', include('fitness.urls')),  # Include the URLs from the fitness app
@@ -27,7 +37,10 @@ urlpatterns = [
 
     path('accounts/', include('allauth.urls')),  # Include allauth URLs
 
+    path("sitemap.xml", sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

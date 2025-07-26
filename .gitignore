@@ -1,6 +1,39 @@
-# .gitignore
-.env
-.venv/
-*.pyc
+# Python bytecode
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Django SQLite database
 db.sqlite3
+
+# Environment variables
+.env
+
+# Django media/static file uploads (if any)
+media/
+staticfiles/
+static/
+
+# VSCode and IDE files
+.vscode/
+*.code-workspace
+.idea/
+
+# Python virtual environments
+.venv/
+env/
+venv/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git files
+*.orig
+
+# Migrations (optional: if auto-generated and not managed manually)
+**/migrations/*.pyc
+**/migrations/__pycache__/

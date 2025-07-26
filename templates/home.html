@@ -1,16 +1,16 @@
 {% extends "layout.html" %}
+{% block title %}Home | WriteLux{% endblock %}
+{% block meta_description %}Discover tools, templates, and blog courses to grow your writing career on WriteLux.{% endblock %}
+{% block meta_keywords %}blogging tools, Nigerian bloggers, mini courses, writing, WriteLux{% endblock %}
 
-{% block title %}
-    Home
-{% endblock  %}
+{% block og_title %}{{ course.title }} | WriteLux{% endblock %}
+{% block og_description %}{{ course.body|truncatewords:20 }}{% endblock %}
+{% block og_image %}{{ course.banner.url }}{% endblock %}
+
+
 
 {% block content %}
-    <div class="hero-section">
-        <img 
-        class="home-image"
-        src="/media/blogger/blogger4.jpeg" alt="Blog image 6" aria-label="Blog home image" title="Blog home image"
-        >
-    </div>
+    <h1 class="typewriter fw-bold text-center text-center">Create. Share. Inspire. Entertain</h1>
     <div class="home-content">
         {% for blog in home_content %}
             <section class="blog-section">
@@ -19,45 +19,177 @@
         {% endfor %}
         <p>Check out the <a href="/users/registration" class="btn">User Dashboard</a></p>
     </div>
+    <div class="hero-section">
+        <img 
+        class="home-image"
+        src="/media/blogger/blogger4.jpeg" alt="Blog image 6" aria-label="Blog home image" title="Blog home image"
+        >
+    </div>
 {% endblock  %}
 
 {% block content1 %}
-    <h2 class="section-title">Amazing Content</h2>
-    <div class="courses">
-        {% for course in courses %}
-            <article class="course-item">
-                <a href="{% url 'fitness:course_page' param=course.slug %}">{{ course.title }}</a>
-            </article>
-        {% endfor %}
-    </div>
-    <p>&nbsp;</p>
     <div class="slider-container">
         <div class="slider content1-slider">
             <img src="/media/blogger/blogger1.jpeg" alt="Blogger image 1" aria-label="Blog image" title="Blog image">
             <img src="/media/blogger/blogger2.jpeg" alt="Blogger image 2" aria-label="Blog image" title="Blog image">
             <img src="/media/blogger/blogger3.jpeg" alt="Blogger image 3" aria-label="Blog image" title="Blog image">
-            <img src="/media/blogger/blogger5.jpeg" alt="Blogger image 5" aria-label="Blog image" title="Blog image">
+            <img src="/media/blogger/blogger2.jpeg" alt="Blogger image 2" aria-label="Blog image" title="Blog image">
+            <img src="/media/blogger/blogger3.jpeg" alt="Blogger image 3" aria-label="Blog image" title="Blog image">
         </div>
     </div>
+    <section class="course-section container">
+        <h2 class="section-heading">Begin your Blog</h2>
+        <div class="card-grid">
+            {% for course in courses %}
+            <div class="content-card">
+                <img src="{{ course.banner.url }}" alt="{{ course.title }}">
+                <div class="card-body">
+                <h5>{{ course.title }}</h5>
+                <a href="{% url 'fitness:course_page' param=course.slug %}" class="btn btn-outline-primary btn-sm mt-2">View Course</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
 {% endblock  %}
 
 {% block content2 %}
-    <h2 class="section-title">Business Plan</h2>
-    <div class="lessons">
-        {% for lesson in lessons %}
-            <article class="lesson-item">
-                <a href="{% url 'fitness:lesson_page' param=lesson.slug %}">{{ lesson.name }}</a>
-            </article>
-        {% endfor %}
-    </div>
-    <p>&nbsp;</p>
-    <div class="slider-container">
-        <div class="slider">
-            <img src="/media/Blog-Cover-Photos-1.jpg" alt="Blog image 1" aria-label="Blog image" title="Blog image">
-            <img src="/media/Blog-Cover-Photos-4.jpg" alt="Blog image 4" aria-label="Blog image" title="Blog image">
-            <img src="/media/Blog-Cover-Photos-2.png" alt="Blog image 2" aria-label="Blog image" title="Blog image">
-            <img src="/media/Blog-Cover-Photos-5.png" alt="Blog image 5" aria-label="Blog image" title="Blog image">
-            <img src="/media/Blog-Cover-Photos-3.png" alt="Blog image 3" aria-label="Blog image" title="Blog image">
+<div class="sidebar-content2">
+
+    <!-- Free Resource or Lead Magnet -->
+    {% if lead_magnets %}
+    <section class="free-resource mb-4">
+        <h5>Free Download</h5>
+        <p>{{ lead_magnets.0.title }}</p>
+        <a href="{{ lead_magnets.0.document.url }}" class="btn btn-sm btn-success" download>Download Now</a>
+    </section>
+    {% endif %}
+
+    <!-- 📩 ConvertKit Signup Form -->
+    <section class="signup-card mb-4">
+        <div class="signup-container">
+            <!-- Success message placeholder -->
+            <div id="ck-success" class="signup-success" style="display: none;">
+            ✅ You’ve successfully subscribed! Check your email for your free download.
+            </div>
+            <h5 class="signup-heading">Join 500+ Bloggers</h5>
+            <p class="signup-subtext">
+            Get weekly tips, free tools, and exclusive guides..
+            </p>
+
+            <form action="https://app.kit.com/forms/8274424/subscriptions" method="post" class="signup-form">
+                <input type="email" name="email_address" placeholder="Enter your email" required>
+                <button type="submit">Subscribe</button>
+                <p class="signup-privacy">We respect your privacy. Unsubscribe any time.</p>
+            </form>
         </div>
-    </div> 
-{% endblock  %}
+    </section>
+
+
+    <!-- Popular Lessons -->
+    <section class="lesson-section container">
+        <h2 class="section-heading">Trending Lessons</h2>
+        <div class="card-grid">
+            {% for lesson in lessons %}
+            <div class="content-card">
+                <img src="{{ lesson.banner.url }}" alt="{{ lesson.name }}">
+                <div class="card-body">
+                <h5>{{ lesson.name }}</h5>
+                <a href="{% url 'fitness:lesson_page' param=lesson.slug %}" class="btn btn-outline-success btn-sm mt-2">View Lesson</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Recommended Tools (Affiliate Picks) -->
+    {% if tools %}
+    <section class="recommended-tools mb-4">
+        <h5>🛠 Recommended Tools</h5>
+        {% for tool in tools %}
+            <div class="tool-card mb-2">
+                <strong>{{ tool.name }}</strong><br>
+                <a href="{{ tool.link }}" 
+                class="btn btn-sm btn-outline-primary mt-1 track-tool"
+                data-tool="{{ tool.name }}"
+                target="_blank">
+                Try {{ tool.name }}
+                </a>
+            </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    <section class="tool-stats mt-5">
+        <h4 class="text-center">Most Clicked Tools</h4>
+        <canvas id="clickChart" style="max-height: 400px;"></canvas>
+    </section>
+
+
+    <!-- Sponsor/Ad Placeholder -->
+    <section class="ad-slot mt-4">
+        <h5>Sponsored</h5>
+        <img src="/static/images/ad-placeholder.jpg" alt="Ad banner" class="img-fluid">
+    </section>
+
+</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === '1') {
+      const successMessage = document.getElementById('ck-success');
+      if (successMessage) {
+        successMessage.style.display = 'block';
+      }
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const toolLinks = document.querySelectorAll('.track-tool');
+    toolLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const toolName = this.dataset.tool;
+            navigator.sendBeacon("{% url 'fitness:ajax_track_tool' %}", new URLSearchParams({
+                tool_name: toolName
+            }));
+        });
+    });
+});
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    fetch("{% url 'fitness:tools_click_stats' %}")
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('clickChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Clicks',
+                        data: data.counts,
+                        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#17a2b8', '#6f42c1']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        });
+});
+</script>
+
+{% endblock %}

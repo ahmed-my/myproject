@@ -1,28 +1,10 @@
 /* home.css */
-
-/*
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 0;
-}
-*/
-
 .hero-section {
     position: relative;
     width: 100%;
     height: 60vh;
     overflow: hidden;
 }
-
-/*
-.home-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-*/
 
 .hero-text h1 {
     font-size: 3em;
@@ -70,6 +52,7 @@ body {
     margin: 20px 0;
 }
 
+/*
 .courses, .lessons {
     display: flex;
     flex-wrap: wrap;
@@ -94,13 +77,59 @@ body {
 .course-item:hover, .lesson-item:hover {
     transform: scale(1.05);
 }
+*/
 
-.slider-container {
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-    margin: auto;
+
+
+/* Section Titles for content 1 and content 2 block*/
+.section-heading {
+  font-size: 1.6rem;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  color: #333;
 }
+
+/* Reusable Card Grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Card Styling */
+.content-card {
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Card Image */
+.content-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+/* Card Text Area */
+.card-body {
+  padding: 1rem;
+  text-align: center;
+}
+
+.card-body h5 {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+  color: #222;
+}
+
 
 
 /* Separate sliding animation for general slider class */
@@ -113,4 +142,226 @@ body {
 .slider img {
     width: 25%;
     flex-shrink: 0;
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeInUp 1s ease-out forwards;
+}
+
+@keyframes typing {
+  0% {
+    width: 0;
+  }
+  40% {
+    width: 100%;
+  }
+  60% {
+    width: 100%;
+  }
+  100% {
+    width: 0;
+  }
+}
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  letter-spacing: 1px;
+  width: 0;
+  font-weight: bold;
+  font-size: 2rem;
+  animation: typing 20s steps(30, end) infinite;
+}
+
+
+.typewriter-text {
+  font-size: 2rem;
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.free-resource {
+  background-color: #e7f7ec;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #d1eedf;
+}
+
+.free-resource h5 {
+  font-size: 1.1rem;
+  color: #3d9970;
+}
+
+.free-resource .btn-success {
+  margin-top: 0.5rem;
+}
+
+
+/* Signup Card Styling */
+.signup-card {
+  background-color: #ffffff;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+  text-align: center;
+}
+
+/* Inner container for spacing */
+.signup-container {
+  max-width: 100%;
+}
+
+/* Heading and description */
+.signup-heading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: #222;
+}
+
+.signup-subtext {
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 0.8rem;
+}
+
+/* Email input field */
+.signup-form input[type="email"] {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  margin-bottom: 0.7rem;
+  outline: none;
+}
+
+.signup-form input[type="email"]:focus {
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2);
+}
+
+/* Subscribe button */
+.signup-form button {
+  background-color: #0056d6;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.95rem;
+  border-radius: 25px;
+  cursor: pointer;
+  width: 100%;
+  transition: 0.3s ease;
+}
+
+.signup-form button:hover {
+  background-color: #0043b5;
+}
+
+/* Privacy note */
+.signup-privacy {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 0.5rem;
+}
+
+/* Sign up success */
+.signup-success {
+  background-color: #e6ffed;
+  border: 1px solid #a4f3c3;
+  padding: 0.75rem;
+  color: #056e3b;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+/* Monitized tool page */
+.tools-section {
+  margin-top: 2rem;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.section-heading {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.section-subheading {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+/* Grid layout for tool cards */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Tool card design */
+.tool-card {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s ease;
+  text-align: center;
+}
+
+.tool-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Tool logo */
+.tool-card img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+/* Tool info block */
+.tool-info h5 {
+  font-size: 1.1rem;
+  color: #222;
+  margin-bottom: 0.3rem;
+}
+
+.tool-info p {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.6rem;
+}
+
+.tool-stats {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-top: 20px;
 }

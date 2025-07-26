@@ -1,13 +1,14 @@
 from django.urls import path
 from .views import (
-    CustomPasswordResetView, CustomPasswordResetConfirmView,
+    password_reset_request, CustomPasswordResetConfirmView,
     CustomPasswordResetCompleteView, CustomPasswordResetDoneView,
-    register, login_user, logout_user, resend_password_reset_email,
+    register, email_confirm, login_user, logout_user, resend_password_reset_email,
     portfolio_view, profile_portfolio, upload_image, user_profile,
     UserListView, user_profile_list, profile_detail, edit_profile,
     inbox, message_detail, delete_message, reply_message,
     bulk_delete_messages, chat_message, send_message_form, send_message_ajax,
-    delete_chat, folder_detail_view, add_folder, rename_folder, delete_folders, delete_image_view
+    delete_chat, folder_detail_view, add_folder, rename_folder, delete_folders,
+    delete_image_view, folder_public_view, contact, update_typing_status, get_typing_status, clear_chat,
 )
 
 app_name = 'users'
@@ -15,23 +16,20 @@ app_name = 'users'
 urlpatterns = [
     # Authentication
     path('registration/', register, name='register'),
+    path('confirm-email/<uidb64>/<token>/', email_confirm, name='email_confirm'),
     path('login/', login_user, name='login_user'),
     path('logout/', logout_user, name='logout_user'),
 
     # Portfolio URLs
     path('portfolio/upload/', upload_image, name='upload_image'),
     path('portfolio/add-folder/', add_folder, name='add_folder'),
-    path('portfolio/rename-folder/', rename_folder, name='rename_folder'),
+    path('portfolio/rename-folder/<int:folder_id>/', rename_folder, name='rename_folder'),
     path('portfolio/delete-folders/', delete_folders, name='delete_folders'),
     
-    #path('portfolio/<uuid:profile_id>/folder/<str:folder_name>/<int:folder_id>/delete-image/<int:image_id>/', delete_image, name='delete_image'),
-
     # Specific folder view by profile_id and folder_id
-    # urls.py
-    #path('portfolio/<uuid:profile_id>/<slug:folder_name>/<int:folder_id>/', folder_detail_view, name='folder_detail'),
     path('portfolio/<uuid:profile_id>/<str:folder_name>/<int:folder_id>/', folder_detail_view, name='folder_detail'),
     path('portfolio/<uuid:profile_id>/<int:folder_id>/<int:image_id>/delete/', delete_image_view, name='delete_image'),
-    #path('portfolio/<uuid:profile_id>/folder/<int:folder_id>/', folder_detail_view, name='folder_detail'),
+    path('portfolio/<uuid:profile_id>/<str:folder_name>/<int:folder_id>/view/', folder_public_view, name='folder_public_view'),
 
     # General portfolio view (least specific pattern)
     path('portfolio/', portfolio_view, name='portfolio'),
@@ -47,7 +45,7 @@ urlpatterns = [
     path('profile/edit/', edit_profile, name='edit_profile'),
 
     # Password Reset
-    path('password_reset/', CustomPasswordResetView.as_view(), name='password_reset'),
+    path('password_reset/', password_reset_request, name='password_reset'),
     path('password_reset/done/', CustomPasswordResetDoneView.as_view(), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('reset/done/', CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
@@ -66,4 +64,13 @@ urlpatterns = [
     path('message/<int:pk>/delete/', delete_message, name='delete_message'),
     path('message/<int:pk>/reply/', reply_message, name='reply_message'),
     path('bulk-delete/', bulk_delete_messages, name='bulk_delete_messages'),
+    path('typing-status/', update_typing_status, name='typing_status'),
+    path('get-typing-status/', get_typing_status, name='get_typing_status'),
+    path('clear-chat/<uuid:conversation_id>/', clear_chat, name='clear_chat'),
+    # path('clear-chat/', clear_chat, name='clear_chat'),
+
+
+
+
+    path('contact/', contact, name='contact'),
 ]
