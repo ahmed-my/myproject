@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}Recommended Tools | WriteLux{% endblock %}
+{% block meta_description %}Explore top blogging tools used by creators and writers. Trusted tools to grow, manage, and monetize your blog.{% endblock %}
+
+{% block content %}
+<section class="tools-section container">
+  <h2 class="section-heading">🛠 Creator Tools We Love</h2>
+  <p class="section-subheading">Explore the blogging platforms, email services, hosting providers, and writing tools we use and recommend. These are perfect for content creators, bloggers, and digital entrepreneurs.</p>
+
+  <div class="tool-grid">
+    {% for tool in tools %}
+      <div class="tool-card">
+        {% if tool.logo %}
+          <img src="{{ tool.logo.url }}" alt="{{ tool.name }} logo">
+        {% endif %}
+        <div class="tool-info">
+          <h5>{{ tool.name }}</h5>
+          <p>{{ tool.description|truncatewords:20 }}</p>
+          <a href="{{ tool.link }}" target="_blank" class="btn btn-sm btn-primary mt-2">Try {{ tool.name }}</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

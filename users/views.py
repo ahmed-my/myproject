@@ -15,18 +15,20 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView, PasswordResetCompleteView, PasswordResetDoneView
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, HttpResponseBadRequest # to implement chat 04-08-2024
 from django.views.generic import ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin # to exclude a user on the lists of users
-from .models import UserProfile, EmailConfirmationToken, Portfolio, Message, Conversation, User, Folder, ContactQuery # message added 02-08-2024
+from .models import UserProfile, EmailConfirmationToken, Portfolio, Message, Conversation, User, Folder, ContactQuery, TypingStatus, Conversation # message added 02-08-2024
 from django.utils import timezone # using time and day for chat
 from .forms import UserCreationForm, UserProfileForm, UserRegistrationForm, AuthenticationForm, UserAuthenticationForm, MessageForm, ReplyMessageForm, PortfolioForm, Folder # MessageForm added 02-08-2024
 from .utils import send_registration_confirmation_email, generate_confirmation_token
 from itertools import groupby
 import uuid
+import json
 
 UserModel = get_user_model()
 
@@ -428,6 +430,11 @@ def chat_message(request):
 
     messages = conversation.messages.all().order_by('timestamp')
 
+    # Step 5: Mark messages sent to the current user as read
+    unread_messages = messages.filter(recipient=request.user, is_read=False)
+    unread_messages.update(is_read=True)
+       
+
     # Group messages by day
     message_days = [
         {
@@ -509,7 +516,7 @@ def send_message_ajax(request):
             'id': message.id,
             'sender': message.sender.username,
             'body': message.body,
-            'timestamp': message.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'timestamp': message.timestamp.strftime('%H:%M'),
         }})
 
 @login_required
@@ -614,7 +621,7 @@ def folder_public_view(request, profile_id, folder_name, folder_id):
         'profile': user_profile,
         'folder': folder,
         'images': images,
-        'title': f"{folder.name} Portfolio",
+        'title': folder.name,
     }
     return render(request, 'portfolio/folder_public.html', context)
 
@@ -647,3 +654,49 @@ def contact(request):
         return render(request, 'contact.html')
     
     return render(request, 'contact.html')
+
+@csrf_exempt
+def update_typing_status(request):
+    if request.method == 'POST' and request.user.is_authenticated:
+        is_typing = request.POST.get('is_typing') == 'true'
+        conv_id = request.POST.get('conversation_id')
+        conversation = Conversation.objects.get(id=conv_id)
+
+        status, created = TypingStatus.objects.get_or_create(user=request.user, conversation=conversation)
+        status.is_typing = is_typing
+        status.save()
+
+        return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': 'unauthorized'}, status=401)
+
+def get_typing_status(request):
+    if request.user.is_authenticated:
+        conv_id = request.GET.get('conversation_id')
+        conversation = Conversation.objects.get(id=conv_id)
+        other_typing = TypingStatus.objects.filter(conversation=conversation).exclude(user=request.user).first()
+        return JsonResponse({'is_typing': other_typing.is_typing if other_typing else False})
+    return JsonResponse({'is_typing': False})
+
+
+@require_POST
+@login_required
+def clear_chat(request, conversation_id):
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+    if request.user not in conversation.participants.all():
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    conversation.messages.filter(sender=request.user).delete()
+    return JsonResponse({'status': 'ok'})
+
+"""
+@login_required
+@require_POST
+def clear_chat(request):
+    conversation_id = request.POST.get('conversation_id')
+    try:
+        conversation = Conversation.objects.get(id=conversation_id, participants=request.user)
+        conversation.messages.filter(sender=request.user).delete()
+        return JsonResponse({'status': 'ok'})
+    except Conversation.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Conversation not found'}, status=404)
+"""

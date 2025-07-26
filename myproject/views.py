@@ -1,13 +1,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from fitness.models import Image
 from posts.models import Post
-from fitness.models import Lesson, Course, Fitness, Home, Quote
+from fitness.models import Image, Lesson, Course, Fitness, Home, Quote, HeroPhrase, LeadMagnet, AffiliateTool 
+from django.utils import translation
 from django.contrib.auth.decorators import login_required
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from posts.forms import CustomForm
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
+from django.utils.timezone import now
 
 def swiper_example(request):
     return render(request, 'swiper_example.html')
@@ -17,11 +18,23 @@ def home(request):
     posts = Post.objects.all()
     lessons = Lesson.objects.all()
     home_content = Home.objects.all()
+    popular_lessons = Lesson.objects.order_by('-id')[:5]
+    lead_magnets = LeadMagnet.objects.all()
+    tools = AffiliateTool.objects.filter(featured=True)
+    current_language = translation.get_language()
+    phrases = list(HeroPhrase.objects.filter(language=current_language).values_list('text', flat=True))
+    if not phrases:
+        phrases = list(HeroPhrase.objects.filter(language='en').values_list('text', flat=True))
     context = {
+        'now': now,
         'courses': courses,
         'posts': posts,
         'lessons': lessons,
-        'home_content': home_content
+        'home_content': home_content,
+        'phrases': phrases,  # 👈 include in context
+        'popular_lessons': popular_lessons,
+        'lead_magnets': lead_magnets,
+        'tools': tools
     }
     return render(request, 'home.html', context)
 

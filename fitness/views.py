@@ -1,6 +1,11 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Fitness, Image, Lesson, Course, Home, Article, Tip, Quote
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Count
+from django.http import JsonResponse
+from django.utils.timezone import now
+from .models import Fitness, Image, Lesson, Course, Home, Article, Tip, Quote, Tool, ToolClick
+from django.views.decorators.csrf import csrf_exempt
 from posts.models import Post
+
 
 def fitness_home(request):
     fitness = Fitness.objects.all()
@@ -71,3 +76,37 @@ def course_page(request, param):
         'course': course
     }
     return render(request, 'fitness/course_page.html', context)
+
+def tools_view(request):
+    tools = Tool.objects.all()
+    context = {
+        'tools': tools
+    }
+    return render(request, 'fitness/tools.html', context)
+
+
+@csrf_exempt
+def ajax_track_tool_click(request):
+    if request.method == 'POST':
+        tool_name = request.POST.get('tool_name')
+        ip = request.META.get('REMOTE_ADDR')
+        user_agent = request.META.get('HTTP_USER_AGENT')
+
+        ToolClick.objects.create(
+            tool_name=tool_name,
+            ip_address=ip,
+            user_agent=user_agent
+        )
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'failed'}, status=400)
+
+
+def tools_click_stats(request):
+    # Aggregate click counts for each tool
+    data = ToolClick.objects.values('tool_name').annotate(total=Count('id')).order_by('-total')[:5]
+    labels = [entry['tool_name'] for entry in data]
+    counts = [entry['total'] for entry in data]
+    return JsonResponse({
+        'labels': labels,
+        'counts': counts
+    })
