@@ -30,6 +30,8 @@ SECRET_KEY = env('SECRET_KEY', default="django-insecure-c%@sd(t6n*^q&uew-dxu$cjq
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
+SITE_ID = 1
+
 # Add your actual domain or localhost for development
 SITE_URL = 'http://127.0.0.1:8000'  # Replace with your actual domain in production
 
@@ -87,12 +89,6 @@ AUTHENTICATION_BACKENDS = (
 # added 31-07-2024
 ACCOUNT_ADAPTER = 'users.adapters.MyAccountAdapter'
 # to this point
-
-
-
-SITE_ID = 1
-
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Allauth specific settings
 ACCOUNT_SIGNUP_FIELDS = [
