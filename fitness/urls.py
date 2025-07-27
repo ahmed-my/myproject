@@ -11,4 +11,7 @@ urlpatterns = [
 
     # Add more paths as needed, e.g., for article detail pages
     path('article/<int:id>/', views.article_detail, name='article_detail'),
+    path('tools/', views.tools_view, name='tools_page'),
+    path('ajax/track-tool/', views.ajax_track_tool_click, name='ajax_track_tool'),
+    path('tools/click-stats/', views.tools_click_stats, name='tools_click_stats'),
 ]

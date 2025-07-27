@@ -1,0 +1,78 @@
+/* Chat Header */
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+/* Top-right menu (⋯) */
+.chat-menu-container {
+    position: relative;
+}
+
+.chat-options-btn {
+    font-size: 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #333;
+}
+
+.chat-options-menu {
+    position: absolute;
+    top: 30px;
+    right: 0;
+    background-color: white;
+    list-style: none;
+    margin: 0;
+    padding: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    width: 150px;
+    display: none;
+}
+
+.chat-options-menu li {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.chat-options-menu li:hover {
+    background-color: #f0f0f0;
+}
+
+/* Context menu for messages (right-click) */
+.message-menu {
+    position: absolute;
+    background-color: white;
+    list-style: none;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    padding: 0;
+    width: 150px;
+    display: none;
+}
+
+.message-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.message-menu li {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.message-menu li:hover {
+    background-color: #f0f0f0;
+}
