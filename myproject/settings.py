@@ -42,8 +42,6 @@ ALLOWED_HOSTS = [
     'www.writelux.pythonanywhere.com',
 ]
 
-# ALLOWED_HOSTS = ['*']
-
 # Application definition
 
 INSTALLED_APPS = [
